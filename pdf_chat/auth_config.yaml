@@ -1,0 +1,13 @@
+credentials:
+  usernames:
+    ali:
+      email: ali.h.khanafer@gmail.com
+      name: Ali Khanafer
+      password: pass # To be replaced with hashed password
+cookie:
+  expiry_days: 0
+  key: random_signature_key # Must be string
+  name: random_cookie_name
+preauthorized:
+  emails:
+  - ali.h.khanafer@gmail.com
