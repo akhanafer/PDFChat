@@ -1,4 +1,7 @@
 import streamlit as st
+import tempfile
+
+from pdf_chat.backend.chatbot import PDFChatBot
 
 st.title("PDF Bot")
 
@@ -25,6 +28,13 @@ for message in st.session_state.messages:
 if "file_uploaded" not in st.session_state:
     uploaded_file = st.file_uploader("Choose a file", type="pdf", key="file_uploader")
     if uploaded_file:
+        bytes_data = uploaded_file.read()
+        temp_file = tempfile.NamedTemporaryFile()
+        temp_file.write(bytes_data)
+        bot = PDFChatBot(
+            pdf_path=temp_file.name
+        )
+        temp_file.close()
         st.session_state.file_uploaded = True
         st.session_state.messages.append(
             {
@@ -34,7 +44,9 @@ if "file_uploaded" not in st.session_state:
         )
         st.experimental_rerun()
 
-# React to user input if logged in:
+
+
+# React to user input if file uploaded:
 if prompt := st.chat_input(
     "Upload PDF to start chat" if "file_uploaded" not in st.session_state else "Chat",
     disabled=(True if "file_uploaded" not in st.session_state else False),
@@ -57,7 +69,7 @@ if prompt := st.chat_input(
             full_response = ""
 
             # Simulate stream of response with milliseconds delay
-            for response in "dummy response, no bot yet".split():
+            for response in bot.query(prompt)['result'].split():
                 full_response += f" {response}"
                 # Add a blinking cursor to simulate typing
                 message_placeholder.markdown(full_response + "▌")

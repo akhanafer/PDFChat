@@ -2,3 +2,8 @@ streamlit
 streamlit-authenticator
 openai
 langchain
+unstructured
+pdf2image
+pdfminer-six
+chromadb
+tiktoken
