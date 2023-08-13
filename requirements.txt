@@ -7,3 +7,5 @@ pdf2image
 pdfminer-six
 chromadb
 tiktoken
+gpt4all
+pypdf

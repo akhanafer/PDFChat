@@ -1,7 +1,7 @@
 import streamlit as st
 import tempfile
 
-from pdf_chat.backend.chatbot import PDFChatBot
+from pdf_chat.backend.chatbot import PDFChatMasterBot
 
 st.title("PDF Bot")
 
@@ -31,7 +31,7 @@ if "file_uploaded" not in st.session_state:
         bytes_data = uploaded_file.read()
         temp_file = tempfile.NamedTemporaryFile()
         temp_file.write(bytes_data)
-        bot = PDFChatBot(
+        st.session_state.bot = PDFChatMasterBot(
             pdf_path=temp_file.name
         )
         temp_file.close()
@@ -69,7 +69,7 @@ if prompt := st.chat_input(
             full_response = ""
 
             # Simulate stream of response with milliseconds delay
-            for response in bot.query(prompt)['result'].split():
+            for response in st.session_state.bot.query(prompt)['output'].split():
                 full_response += f" {response}"
                 # Add a blinking cursor to simulate typing
                 message_placeholder.markdown(full_response + "▌")
