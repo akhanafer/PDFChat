@@ -126,33 +126,35 @@ class PDFChatMasterBot:
         Return:
             String answer, or files, depending on user request
         """
-        try:
-            output = self.agent_executor(
-                f"Use the document to answer the following question: {prompt}"
-            )
-        except:
-            return "Sorry about that, there seems to have been a problem on my side. Could you try the prompt again?"
-        if output["intermediate_steps"][0][0].tool == "document_summarization_tool":
-            # Summary
-            summary_pdf = FPDF("P", "mm", "A4")
-            summary_pdf.add_page()
-            summary_pdf.set_font("times", "", 12)
-            summary_pdf.multi_cell(w=190, txt=output["output"])
+        output = self.agent_executor(
+            f"Use the document to answer the following question: {prompt}"
+        )
+        if len(output["intermediate_steps"]) != 0:
+            if output["intermediate_steps"][0][0].tool == "document_summarization_tool":
+                try:
+                    # Summary
+                    summary_pdf = FPDF("P", "mm", "A4")
+                    summary_pdf.add_page()
+                    summary_pdf.set_font("times", "", 12)
+                    summary_pdf.multi_cell(w=190, txt=output["output"])
 
-            # HTML Diff
-            html_diff = HtmlDiff(wrapcolumn=100).make_file(
-                "\n".join(
-                    [doc.page_content for doc in self.full_document]
-                ).splitlines(),
-                output["output"].splitlines(),
-                fromdesc="Original",
-                todesc="Summary",
-            )
+                    # HTML Diff
+                    html_diff = HtmlDiff(wrapcolumn=100).make_file(
+                        "\n".join(
+                            [doc.page_content for doc in self.full_document]
+                        ).splitlines(),
+                        output["output"].splitlines(),
+                        fromdesc="Original",
+                        todesc="Summary",
+                    )
 
-            return bytes(summary_pdf.output()), html_diff
+                    return bytes(summary_pdf.output()), html_diff
+                except:
+                    return 'Sorry, there seems to have been a slight error on my part. I can fix myself! Just re-enter the prompt'
+            else:
+                return output["output"]
         else:
             return output["output"]
-
 
 class QARetrievalBot:
     """
