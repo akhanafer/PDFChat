@@ -2,8 +2,11 @@ import streamlit as st
 import tempfile
 
 from pdf_chat.backend.chatbot import PDFChatMasterBot
+from zipfile import ZipFile
 
 st.title("PDF Bot")
+
+download = False
 
 # Initialize Chat History
 if "messages" not in st.session_state:
@@ -31,9 +34,7 @@ if "file_uploaded" not in st.session_state:
         bytes_data = uploaded_file.read()
         temp_file = tempfile.NamedTemporaryFile()
         temp_file.write(bytes_data)
-        st.session_state.bot = PDFChatMasterBot(
-            pdf_path=temp_file.name
-        )
+        st.session_state.bot = PDFChatMasterBot(pdf_path=temp_file.name)
         temp_file.close()
         st.session_state.file_uploaded = True
         st.session_state.messages.append(
@@ -43,7 +44,6 @@ if "file_uploaded" not in st.session_state:
             }
         )
         st.experimental_rerun()
-
 
 
 # React to user input if file uploaded:
@@ -66,14 +66,33 @@ if prompt := st.chat_input(
         # Display assistant response in chat message container
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
-            full_response = ""
+            full_response = st.session_state.bot.query(prompt)
+            if isinstance(full_response, str):
+                message_placeholder.markdown(full_response, unsafe_allow_html=True)
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": full_response}
+                )
+            else:
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": "Summary created, you can download it by clicking on the Download button",
+                    }
+                )
+                st.session_state.download_button = True
+                st.session_state.download_response = full_response
+                st.experimental_rerun()
+if "download_button" in st.session_state and "downloaded" not in st.session_state:
+    download_response = st.session_state.download_response
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        html_file = open(f"{tmp_dir}/html_diff.html", "w").write(download_response[1])
+        pdf_file = open(f"{tmp_dir}/summary.pdf", "wb").write(download_response[0])
+        with ZipFile(f"zipped_file.zip", "w") as zip_object:
+            zip_object.write(f"{tmp_dir}/html_diff.html", "./html_diff.html")
+            zip_object.write(f"{tmp_dir}/summary.pdf", "./summary.pdf")
 
-            # Simulate stream of response with milliseconds delay
-            for response in st.session_state.bot.query(prompt)['output'].split():
-                full_response += f" {response}"
-                # Add a blinking cursor to simulate typing
-                message_placeholder.markdown(full_response + "▌")
-            message_placeholder.markdown(full_response)
-        st.session_state.messages.append(
-            {"role": "assistant", "content": full_response}
-        )
+        with open(f"zipped_file.zip", "rb") as fp:
+            st.download_button(
+                "Download", data=fp, file_name="summary.zip", mime="application/zip"
+            )
+            st.session_state.downloaded = True

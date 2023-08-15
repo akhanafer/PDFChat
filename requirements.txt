@@ -9,3 +9,7 @@ chromadb
 tiktoken
 gpt4all
 pypdf
+pdf-diff
+fpdf2
+bs4
+reportlab
