@@ -1,7 +1,7 @@
 import streamlit as st
 import tempfile
 
-from pdf_chat.backend.chatbot import PDFChatMasterBot
+from chatbot import PDFChatMasterBot
 from zipfile import ZipFile
 
 st.title("PDF Bot")
