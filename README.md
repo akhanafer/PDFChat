@@ -30,3 +30,14 @@ The bot is made up of three components:
 2. QA Retrieval Agent: This agent handles general questions about the contents of a PDF. Does so using Langchain's ConversationalRetrievalChain, which stores different document parts as embeddings in a vectore store, and performs a similarity search between these embeddings and the user's prompt. See here for more https://python.langchain.com/docs/use_cases/question_answering/
 
 3. Summarization Agent: This agent handles the summarizatin of the PDF. Does so by using langchain's MapReduceDocumentsChain, which uses Map-Reduce to summarize all splits of document (Map) before combining them to produce one full summary of the entire document (Reduce). See here for more https://python.langchain.com/docs/use_cases/summarization
+
+## Demo
+You can find an example PDF under the examples folder. Types of questions you can ask:
+
+1. How can the definition of demand change based on who is defining it?
+2. What is demand?
+3. Summarize this document for me
+
+The bot is tuned not to answer questions that don't pertain to the document. Questions like the following won't be answered:
+1. How many continents are their?
+2. What is water?
