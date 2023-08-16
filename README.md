@@ -31,6 +31,10 @@ The bot is made up of three components:
 
 3. Summarization Agent: This agent handles the summarizatin of the PDF. Does so by using langchain's MapReduceDocumentsChain, which uses Map-Reduce to summarize all splits of document (Map) before combining them to produce one full summary of the entire document (Reduce). See here for more https://python.langchain.com/docs/use_cases/summarization
 
+### Why use master-agent architecture?
+1. All prompts sent to agents are much smaller since there's no requirement of constantly pre-pending the entire document to the prompt for the agent to have context. Smaller prompt means, incurring less costs and allowing for the master agent's memory not to get flooded
+2. It's more modularized, so we aren’t restricted to a single model. You can use different models based on the different requirements of the agents
+
 ## Demo
 You can find an example PDF under the examples folder. Types of questions you can ask:
 
