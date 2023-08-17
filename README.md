@@ -26,15 +26,17 @@ streamlit run pdf_chat/streamlit_app.py
 ```
 
 ## How It Works
-The bot is made up of three components:
+The bot is made up of three components, a master agent and two child agents. They interact in the following manner:
     
-1. Master agent: This agent takes in a user prompt and delegates the task to one of the two bots it has access to (see steps two and three). It's a simple chat agent with memory, enabling a chat-like interface between the user and the bot
+1. Master OpenAI Functions agent: This agent takes in a user prompt and delegates the task to one of the two bots it has access to using langchain's OpenAIFunctions Agent (see points two and three). It's a simple chat agent with memory, enabling a chat-like interface between the user and the bot
     
 2. QA Retrieval Agent: This agent handles general questions about the contents of a PDF. Does so using Langchain's ConversationalRetrievalChain, which stores different document parts as embeddings in a vectore store, and performs a similarity search between these embeddings and the user's prompt. See here for more https://python.langchain.com/docs/use_cases/question_answering/
 
 3. Summarization Agent: This agent handles the summarizatin of the PDF. Does so by using langchain's MapReduceDocumentsChain, which uses Map-Reduce to summarize all splits of document (Map) before combining them to produce one full summary of the entire document (Reduce). See here for more https://python.langchain.com/docs/use_cases/summarization
 
-### Why use master-agent architecture?
+<img src="_static/basic_flow.png" alt="drawing" width="800"/>
+
+### Why use master-child architecture?
 1. All prompts sent to agents are much smaller since there's no requirement of constantly pre-pending the entire document to the prompt for the agent to have context. Smaller prompt means, incurring less costs and allowing for the master agent's memory not to get flooded
 2. It's more modularized, so we aren’t restricted to a single model. You can use different models based on the different requirements of the agents
 
