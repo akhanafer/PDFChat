@@ -59,4 +59,4 @@ The bot is tuned not to answer questions that don't pertain to the document. Que
 2. What is water?
 
 # Tutorial
-You can set of detailed steps have been written on in `pdf_chat/chatbot.py`. Your task is to create the master agent and the QA retrieval chain. Creating the summarization chain is not part of the tutorial, and is left as an example for the developer to use
+A set of detailed steps have been written as comments in `pdf_chat/chatbot.py`. Your task is to create the master agent and the QA retrieval chain. Creating the summarization chain is not part of the tutorial, and is left as an example for the developer to use
