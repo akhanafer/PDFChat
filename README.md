@@ -1,11 +1,18 @@
 # PDFChat
-PDFChat is a chatbot that allows you to interact with your PDF files. You can:
+- [PDFChat](#pdfchat)
+  - [Requirements](#requirements)
+  - [Running](#running)
+  - [How It Works](#how-it-works)
+    - [Why use master-child architecture?](#why-use-master-child-architecture)
+  - [Demo](#demo)
+- [Tutorial](#tutorial)
 
 1. Ask general questions about the contents of a PDF: These are questions that don't require summarization.
         Instead, these questions require that PDFBot look through the contents of the PDF to answer the user's
         question.
 
 2. Ask PDFchat to summarize the document for you, at which point it'll allow you to download a sumamry PDF and a change diff in HTMl
+
 
 ## Requirements
 * Python 3.10
@@ -50,3 +57,6 @@ You can find an example PDF under the examples folder. Types of questions you ca
 The bot is tuned not to answer questions that don't pertain to the document. Questions like the following won't be answered:
 1. How many continents are their?
 2. What is water?
+
+# Tutorial
+You can set of detailed steps have been written on in `pdf_chat/chatbot.py`. Your task is to create the master agent and the QA retrieval chain. Creating the summarization chain is not part of the tutorial, and is left as an example for the developer to use

@@ -26,27 +26,14 @@ from langchain.memory import ConversationBufferMemory
 from typing import List
 
 SYSTEM_MESSAGE_PROMPT = """
-    Assistant's name is PDFBot, a help agent for answering questions about a user-provided PDF document. PDFBot
-    is able to answer two types of questions:
-        1. General questions about the contents of a PDF: These are questions that don't require summarization.
-            Instead, these questions require that PDFBot look through the contents of the PDF to answer the user's
-            question
-        2. Summarization: This kind of question requires PDFBot to summarize the entire document
-    No question that isn't about the document, or the document's contents should be answered. If a user asks a question
-    that isn't about the document, you should tell them that you can't answer questions that aren't related to the document.
-    Your answer should contain more than 1000 words
+<PLAY AROUND WITH THE SYSTEM PROMPT>
 """
 MEMORY_KEY = "chat_history"
 
-
-# Why split into different agents?
-    # Prompt is smaller, incurring less costs and allowing for longer memory between different agents
-    # More modularized: E.g. Aren’t restricted to a single model. You can use different models based on the different requirements.
-
 class PDFChatMasterBot:
     """
-    Master Agent. This agent takes care of delefating the prompt to the right agent. It
-    initializes two agents for two different kidns of queries:
+    Master Agent. This agent takes care of delegating the prompt to the right agent. It
+    initializes two agents for two different kinds of queries:
         1. General questions about the contents of a PDF: These are questions that don't require summarization.
             Instead, these questions require that PDFBot look through the contents of the PDF to answer the user's
             question.
@@ -57,26 +44,30 @@ class PDFChatMasterBot:
         pdf_path (str): Path to the PDF file that you want to use for your queries
     """
     def __init__(self, pdf_path: str) -> None:
-        self.full_document = PyPDFLoader(pdf_path).load()
+        # Step 1:
+        # Load PDF using an apropriate loader. You can find a list of LangChain loaders at https://integrations.langchain.com/
+        self.full_document = ...
         split_documents = RecursiveCharacterTextSplitter(
             chunk_size=500, chunk_overlap=0
         ).split_documents(self.full_document)
 
-        self.qa_retrival_bot = QARetrievalBot(split_documents)
+        # Step 2:
+        # Initialize the QARetrievalBot and the SummarizationBot. The former takes as parameter the split documents
+        # while the latter takes in the full document. Both classes should have a function exposed to the master bot
+        # that allows us to execute their respective chains
+        self.qa_retrival_bot = ...
         self.summarize_bot = SummarizationBot(self.full_document)
 
+
+        # Step 3:
+        # Populate the list of tools using the Tool.from_function method. This method takes three parameters that help the
+        # agent understand when it should be call:
+            # 1. name: The tool's name
+            # 2. func: The function to call when the LLM decides that this is the tool it should use for the given prompt
+            # 3. description: The description of what the tool is and when it should be used
+        # You can read more about tools here https://python.langchain.com/docs/modules/agents/tools/
+
         self.tools = [
-            Tool.from_function(
-                name="document_QA_tool",
-                func=self.qa_retrival_bot.query,
-                description="""
-                    Used when you need to answer a general question about the document's contents. This is useful for
-                    when the user is asking questions about the document, and isn't asking for you to summarize the
-                    document.
-                    Input:
-                        general_question (str): The user's general question concerning the document's contents
-                """,
-            ),
             Tool.from_function(
                 name="document_summarization_tool",
                 func=self.summarize_bot.summarize,
@@ -84,10 +75,19 @@ class PDFChatMasterBot:
                     Used when the user is asking for a summary of the document. the output always contains at least 1000 words. This tool has no input
                 """,
             ),
-        ]
+        ] # add QA tool exposed by child agents
 
-        self.llm = ChatOpenAI(model="gpt-3.5-turbo-16k", temperature=0.0)
+        # Step 4:
+        # Add the right parameters to the ChatOpenAI class below. Since this tutorial uses the OpenAIFunctionsAgent,
+        # It will only work with LangChain's GPT class, ChatOpenAI but you can find documentation
+        # for all supported models (including ChatOpenAI) here https://python.langchain.com/docs/integrations/chat/
+        self.llm = ChatOpenAI() # Add necessary params
 
+
+        # Defines the system prompt and a memory key (location in the prompt where memory should be apended)
+        # This is always the first prompt that will be sent to our agent, since it gives the agent things like
+        # context, and your described personality. Play with the system prompt above to see if you can get a good
+        # PDF bot!
         self.prompt = OpenAIFunctionsAgent.create_prompt(
             system_message=SystemMessage(content=SYSTEM_MESSAGE_PROMPT),
             extra_prompt_messages=[
@@ -95,13 +95,14 @@ class PDFChatMasterBot:
             ],
         )
 
-        self.memory = ConversationBufferMemory(
-            memory_key=MEMORY_KEY,
-            return_messages=True,
-            input_key="input",
-            output_key="output",
-        )
+        # Step 5:
+        # Define the memory. The memory will do as it says: give the agent memory
+        # so that it can have a more conversational-like feel. more here
+        # https://python.langchain.com/docs/modules/memory/
+        self.memory = ...
 
+        # Everything you've done so far is to reach these next few lines: Initializing the agent
+        # with the proper model, tools, system prompt, and memory
         self.agent = OpenAIFunctionsAgent(
             llm=self.llm, tools=self.tools, prompt=self.prompt
         )
@@ -126,35 +127,8 @@ class PDFChatMasterBot:
         Return:
             String answer, or files, depending on user request
         """
-        output = self.agent_executor(
-            f"Use the document to answer the following question: {prompt}"
-        )
-        if len(output["intermediate_steps"]) != 0:
-            if output["intermediate_steps"][0][0].tool == "document_summarization_tool":
-                try:
-                    # Summary
-                    summary_pdf = FPDF("P", "mm", "A4")
-                    summary_pdf.add_page()
-                    summary_pdf.set_font("times", "", 12)
-                    summary_pdf.multi_cell(w=190, txt=output["output"])
-
-                    # HTML Diff
-                    html_diff = HtmlDiff(wrapcolumn=100).make_file(
-                        "\n".join(
-                            [doc.page_content for doc in self.full_document]
-                        ).splitlines(),
-                        output["output"].splitlines(),
-                        fromdesc="Original",
-                        todesc="Summary",
-                    )
-
-                    return bytes(summary_pdf.output()), html_diff
-                except:
-                    return 'Sorry, there seems to have been a slight error on my part. I can fix myself! Just re-enter the prompt'
-            else:
-                return output["output"]
-        else:
-            return output["output"]
+        # Step 6:
+        # Execute the self.agent_executer with the user's prompt and return its output
 
 class QARetrievalBot:
     """
@@ -169,19 +143,26 @@ class QARetrievalBot:
             parts
     """
     def __init__(self, split_documents: List[Document]) -> None:
-        self.memory = ConversationBufferMemory(
-            memory_key="chat_history", return_messages=True
-        )
-        self.vectorstore = Chroma.from_documents(
-            documents=split_documents, embedding=GPT4AllEmbeddings()
-        )
-        self.llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
-        self.qa_chat = ConversationalRetrievalChain.from_llm(
-            self.llm, retriever=self.vectorstore.as_retriever(), memory=self.memory
-        )
+        # Step 1:
+        # Initialize vectore store. You can find all vector stores supported by
+        # langchain here https://python.langchain.com/docs/integrations/vectorstores/
+        self.vectorstore = ...
+
+        # Step 2:
+        # Create the model you would like this chain to use. It can be any model you'd like
+        # from this list https://python.langchain.com/docs/integrations/llms/
+        self.llm = ...
+
+        # Step 3:
+        # Initialize the ConversationalRetrievalChain using the vector store and model you've defined
+        # above. More on this chain here https://python.langchain.com/docs/use_cases/question_answering/
+        self.qa_chat = ...
 
     def query(self, general_question: str) -> str:
-        return self.qa_chat({"question": general_question})
+        # Step 4:
+        # Use input the prompt into your chain, so it can go through the sequence of
+        # steps that it needs to to provide an output. Return this output to the master bot
+        return
 
 
 class SummarizationBot:
