@@ -10,6 +10,7 @@ PDFChat is a chatbot that allows you to interact with your PDF files. You can:
 ## Requirements
 * Python 3.10
 * Streamlit 1.25
+* An OpenAI API key
 
 ## Running
 1. Create virtual environment
@@ -17,9 +18,11 @@ PDFChat is a chatbot that allows you to interact with your PDF files. You can:
 virtualenv pdf_bot
 ```
 
-2. Run as streamlit app
+2. Create a `.streamlit` folder at the root of the repository and add a `secrets.toml` file to it
+3. Add `OPENAI_API_KEY = "<YOUR-OPEN-AI-KEY>"` to your `secrets.toml` file
+4. Run as streamlit app
 ```
-streamlit run streamlit run pdf_chat/streamlit_app.py
+streamlit run pdf_chat/streamlit_app.py
 ```
 
 ## How It Works
